@@ -1,0 +1,32 @@
+name: phpcs check
+on:
+  pull_request:
+    branches-ignore:
+      - 'master'
+
+jobs:
+  phpcs-check-actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Cache Composer dependencies
+        uses: actions/cache@v2
+        with:
+          path: /tmp/composer-cache
+          key: ${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+      - name: Install dependencies
+        uses: php-actions/composer@v5
+        with:
+          php_version: 7.1
+          version: 1
+          args: --ignore-platform-reqs
+      - run: git fetch
+      - name: run phpcs
+        id: phpcs
+        run: |
+          pip3 install PyGithub
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          python3 ./scripts/checkcode.py --update-pr --tool phpcs --repo ${{ github.event.repository.name }} --pr ${{ github.event.pull_request.number }} --token ${{ secrets.GITHUB_TOKEN }}
